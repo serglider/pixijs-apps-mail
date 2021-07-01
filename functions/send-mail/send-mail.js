@@ -1,35 +1,82 @@
 require('dotenv').config();
 const nodemailer = require('nodemailer');
 
-exports.handler = function (event, context, callback) {
-    let transporter = nodemailer.createTransport({
-        host: 'smtp.gmail.com',
-        port: 465,
-        secure: true,
+const authUser = process.env.SMTP_USER + '@' + process.env.SMTP_PROVIDER;
+
+// {
+//     "name": "Vasya",
+//     "email": "fobar@mail.ru",
+//     "app": "pixijs-club",
+//     "content": "Hi There"
+// }
+
+exports.handler = async function (event) {
+    const { httpMethod, body } = event;
+
+    if (httpMethod !== 'POST') {
+        return response(405, 'Method Not Allowed');
+    }
+
+    const data = parse(body);
+
+    if (data === null) {
+        return response(422, 'Unprocessable entity');
+    }
+
+    if (!isValid(data)) {
+        return response(422, 'Incorrect request data');
+    }
+
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
         auth: {
-            user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PSW,
+            user: authUser,
+            pass: process.env.SMTP_PSW,
         },
     });
 
-    console.log(event.body);
-
-    transporter.sendMail(
-        {
-            from: 'chernyh39157@gmail.com',
-            to: 'chernyh39157+foobar@gmail.com',
-            subject: new Date().toLocaleString(),
-            text: event.body,
-        },
-        function (error, info) {
-            if (error) {
-                callback(error);
-            } else {
-                callback(null, {
-                    statusCode: 200,
-                    body: 'Ok',
-                });
-            }
-        }
-    );
+    try {
+        await transporter.sendMail(createMailObject(data));
+        return response(200, 'OK');
+    } catch (e) {
+        console.log(e);
+        return response(500, 'Something went wrong');
+    }
 };
+
+function createMailObject({ name, email, content, app }) {
+    return {
+        from: email,
+        to: createTargetMail(app),
+        subject: createSubject(name, email, app),
+        text: content,
+    };
+}
+
+function createTargetMail(app) {
+    return process.env.SMTP_USER + '+' + app + '@' + process.env.SMTP_PROVIDER;
+}
+
+function createSubject(name, email, app) {
+    return `${name}(${email}) message from ${app}`;
+}
+
+function response(code, body) {
+    return {
+        statusCode: code,
+        body,
+    };
+}
+
+function parse(json) {
+    let data = null;
+    try {
+        data = JSON.parse(json);
+    } catch (e) {}
+    return data;
+}
+
+function isValid(data) {
+    const mandatoryFields = ['name', 'email', 'content', 'app'];
+    return mandatoryFields.every((key) => key in data);
+}
