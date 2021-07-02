@@ -3,32 +3,22 @@ const nodemailer = require('nodemailer');
 
 const authUser = process.env.SMTP_USER + '@' + process.env.SMTP_PROVIDER;
 
-// {
-//     "name": "Vasya",
-//     "email": "fobar@mail.ru",
-//     "app": "pixijs-club",
-//     "content": "Hi There"
-// }
 
 exports.handler = async function (event) {
     const { httpMethod, body } = event;
 
-    // if (httpMethod !== 'POST') {
-    //     return response(405, 'Method Not Allowed');
-    // }
-
     if (httpMethod === 'OPTIONS') {
-        return response(200, 'Preflight');
+        return createResponse(200, 'Preflight');
     }
 
-    const data = parse(body);
+    const data = parseJSON(body);
 
     if (data === null) {
-        return response(422, 'Unprocessable entity');
+        return createResponse(422, 'Unprocessable entity');
     }
 
     if (!isValid(data)) {
-        return response(422, 'Incorrect request data');
+        return createResponse(422, 'Incorrect request data');
     }
 
     const transporter = nodemailer.createTransport({
@@ -41,10 +31,10 @@ exports.handler = async function (event) {
 
     try {
         await transporter.sendMail(createMailObject(data));
-        return response(200, 'OK');
+        return createResponse(200, 'OK');
     } catch (e) {
         console.log(e);
-        return response(500, 'Something went wrong');
+        return createResponse(500, 'Something went wrong');
     }
 };
 
@@ -65,7 +55,7 @@ function createSubject(name, email, app) {
     return `${name}(${email}) message from ${app}`;
 }
 
-function response(code, body) {
+function createResponse(code, body) {
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type',
@@ -78,7 +68,7 @@ function response(code, body) {
     };
 }
 
-function parse(json) {
+function parseJSON(json) {
     let data = null;
     try {
         data = JSON.parse(json);
