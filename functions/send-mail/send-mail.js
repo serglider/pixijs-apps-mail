@@ -13,9 +13,9 @@ const authUser = process.env.SMTP_USER + '@' + process.env.SMTP_PROVIDER;
 exports.handler = async function (event) {
     const { httpMethod, body } = event;
 
-    if (httpMethod !== 'POST' || httpMethod !== 'OPTIONS') {
-        return response(405, 'Method Not Allowed');
-    }
+    // if (httpMethod !== 'POST') {
+    //     return response(405, 'Method Not Allowed');
+    // }
 
     if (httpMethod === 'OPTIONS') {
         return response(200, 'Preflight');
