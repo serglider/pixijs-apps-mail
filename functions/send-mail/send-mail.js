@@ -52,7 +52,7 @@ function createTargetMail(app) {
 }
 
 function createSubject(name, email, app) {
-    return `${name}(${email}) message from ${app}`;
+    return `${name} (${email}) message from ${app}`;
 }
 
 function createResponse(code, body) {
