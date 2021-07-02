@@ -3,7 +3,6 @@ const nodemailer = require('nodemailer');
 
 const authUser = process.env.SMTP_USER + '@' + process.env.SMTP_PROVIDER;
 
-
 exports.handler = async function (event) {
     const { httpMethod, body } = event;
 
